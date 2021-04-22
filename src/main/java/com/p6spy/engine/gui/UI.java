@@ -64,14 +64,16 @@ public class UI extends JFrame {
       textArea.append("\n");
     }
 
+    // 数据打印
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
     textArea.append(sdf.format(new Date()));
     textArea.append("  ");
     textArea.append(preFix);
     textArea.append("  ");
     textArea.append(text);
-    textArea.selectAll();
+
+    // 定位到最后一行
+    textArea.setCaretPosition(textArea.getText().length());
   }
 
   private void componentInit(){
