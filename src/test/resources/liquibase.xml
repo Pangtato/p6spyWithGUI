@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    P6Spy
+
+    Copyright (C) 2002 - 2017 P6Spy
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="customers-table" author="quintonm">
+    <!-- generic table to be used by all tests -->
+    <createTable tableName="customers">
+      <column name="id" type="int"/>
+      <column name="name" type="varchar(255)"/>
+    </createTable>
+  </changeSet>
+
+	<changeSet id="seed-customers-table" author="butkovic"
+		runAlways="true">
+		<delete tableName="customers" />
+		<loadData tableName="customers" file="testdata/customers.csv">
+			<column name="id" type="numeric" />
+			<column name="name" type="string" />
+		</loadData>
+	</changeSet>
+    
+  <changeSet id="contacts-table" author="quintonm">
+    <!-- generic table to be used by all tests -->
+    <createTable tableName="contacts">
+      <column name="id" type="int"/>
+      <column name="name" type="varchar(255)"/>
+    </createTable>
+  </changeSet>
+
+	<changeSet id="seed-contacts-table" author="butkovic"
+		runAlways="true">
+		<delete tableName="contacts" />
+		<loadData tableName="contacts" file="testdata/contacts.csv">
+			<column name="id" type="numeric" />
+			<column name="name" type="string" />
+		</loadData>
+	</changeSet>
+  
+  <changeSet id="create-test-proc-oracle" author="quintonm">
+    <!-- used by P6TestCallableStatement -->
+    <preConditions onFail="CONTINUE">
+      <dbms type="Oracle"/>
+    </preConditions>
+    <createProcedure>
+      create or replace procedure test_proc(param1 number, param2 varchar2, result_param out number) as
+      begin
+        result_param := 2;
+      end;      
+    </createProcedure>
+  </changeSet>
+
+  <changeSet id="create-test-proc-mysql" author="quintonm">
+    <!-- used by P6TestCallableStatement -->
+    <preConditions onFail="CONTINUE">
+      <dbms type="MySQL"/>
+    </preConditions>
+    <!-- liquibase does not drop stored procedures automatically -->
+    <sql>
+      drop procedure if exists test_proc
+    </sql>
+    <createProcedure>
+      create procedure test_proc(param1 int, param2 varchar(100), out result_param int)
+      begin
+        set result_param = 2;
+      end
+    </createProcedure>
+  </changeSet>
+
+  <changeSet id="create-test-proc-rs-mysql" author="quintonm">
+    <!-- used by P6TestCallableStatement -->
+    <preConditions onFail="CONTINUE">
+      <dbms type="MySQL"/>
+    </preConditions>
+    <!-- liquibase does not drop stored procedures automatically -->
+    <sql>
+      drop procedure if exists test_proc_rs
+    </sql>
+    <createProcedure>
+      create procedure test_proc_rs(cust_name varchar(100))
+      begin
+      select * from customers where name like concat('%',cust_name,'%');
+      end
+    </createProcedure>
+  </changeSet>
+
+  <changeSet id="create-test-proc-hsqldb" author="quintonm">
+    <!-- used by P6TestCallableStatement -->
+    <preConditions onFail="CONTINUE">
+      <dbms type="HSQLDB"/>
+    </preConditions>
+    <sql>
+      DROP procedure TEST_PROC IF EXISTS;
+    </sql>
+    <createProcedure>
+      CREATE PROCEDURE TEST_PROC(param1 int, param2 varchar(100), out result_param int)
+      LANGUAGE JAVA
+      DETERMINISTIC NO SQL
+      EXTERNAL NAME 'CLASSPATH:com.p6spy.engine.test.HsqlProcedures.testProc'
+    </createProcedure>
+  </changeSet>
+
+  <changeSet id="create-test-proc-rs-hsqldb" author="quintonm">
+    <!-- used by P6TestCallableStatement -->
+    <preConditions onFail="CONTINUE">
+      <dbms type="HSQLDB"/>
+    </preConditions>
+    <sql>
+      DROP procedure TEST_PROC_RS IF EXISTS;
+    </sql>
+    <createProcedure>
+      CREATE PROCEDURE TEST_PROC_RS(cust_name varchar(100))
+      LANGUAGE JAVA
+      READS SQL DATA DYNAMIC RESULT SETS 1
+      EXTERNAL NAME 'CLASSPATH:com.p6spy.engine.test.HsqlProcedures.testProcRs'
+    </createProcedure>
+  </changeSet>
+
+  <changeSet id="create-sleep-proc" author="quintonm">
+    <!-- used by P6TestOutage -->
+    <preConditions onFail="CONTINUE">
+      <dbms type="H2"/>
+    </preConditions>
+    <sql>
+      DROP ALIAS IF EXISTS SLEEP;
+    </sql>
+    <createProcedure>
+      CREATE ALIAS SLEEP AS $$ 
+      void sleep(long milliseconds) {
+         try { 
+               java.lang.Thread.sleep(milliseconds);
+         } catch (java.lang.InterruptedException e) {} 
+      } $$;      
+    </createProcedure>
+  </changeSet>
+
+  <changeSet id="create-img-table" author="butkovic">
+    <!-- table holding binary data -->
+    <createTable tableName="img">
+      <column name="id" type="int"/>
+      <column name="val" type="blob"/>
+      <column name="val2" type="blob"/>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="create-test-proc-binary-oracle" author="butkovic">
+    <!-- used by P6TestCallableStatement -->
+    <preConditions onFail="CONTINUE">
+      <dbms type="Oracle"/>
+    </preConditions>
+    <createProcedure>
+      create or replace procedure test_proc_binary(param_val blob, param_id number, result_param out number) as
+      begin
+        result_param := 2;
+      end;    
+    </createProcedure>
+  </changeSet>
+  
+  <changeSet id="create-test-proc-binary-mysql" author="butkovic">
+    <!-- used by P6TestCallableStatement -->
+    <preConditions onFail="CONTINUE">
+      <dbms type="MySQL"/>
+    </preConditions>
+    <!-- liquibase does not drop stored procedures automatically -->
+    <sql>
+      drop procedure if exists test_proc_binary
+    </sql>
+    <createProcedure>
+      create procedure test_proc_binary(param_val blob, param_id int, out result_param int)
+      begin
+        set result_param = 2;
+      end
+    </createProcedure>
+  </changeSet>
+ 
+  <changeSet id="create-test-proc-binary-hsqldb" author="butkovic">
+    <!-- used by P6TestCallableStatement -->
+    <preConditions onFail="CONTINUE">
+      <dbms type="HSQLDB"/>
+    </preConditions>
+    <sql>
+      DROP procedure test_proc_binary IF EXISTS;
+    </sql>
+    <!--
+      CREATE PROCEDURE test_proc_binary(param_val blob, param_id int, out result_param blob)
+        MODIFIES SQL DATA DYNAMIC RESULT SETS 1s 
+        DECLARE result CURSOR FOR SELECT VAL FROM IMG WHERE ID = param_id;
+        OPEN result;
+     -->
+    <createProcedure>
+      CREATE PROCEDURE test_proc_binary(param_val blob, param_id int, out result_param int)
+      BEGIN ATOMIC
+        set result_param = 2;
+      END
+    </createProcedure>
+  </changeSet>
+  
+</databaseChangeLog>
