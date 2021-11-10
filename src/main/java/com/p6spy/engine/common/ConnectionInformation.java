@@ -18,12 +18,12 @@
 
 package com.p6spy.engine.common;
 
+import javax.sql.CommonDataSource;
+import javax.sql.PooledConnection;
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.sql.CommonDataSource;
-import javax.sql.PooledConnection;
 
 /**
  * @author Quinton McCombs
@@ -151,12 +151,19 @@ public class ConnectionInformation implements Loggable {
 
   @Override
   public String getSql() {
+    try {
+      // 解决有一部分sql打印不出来的问题，但是没有参数
+      Class clazz = connection.getClass();
+      Field field = clazz.getDeclaredField("executeSql");
+      field.setAccessible(true);
+      return field.get(connection).toString();
+    } catch (Exception e){}
     return "";
   }
 
   @Override
   public String getSqlWithValues() {
-    return "";
+    return getSql();
   }
 
   /**
